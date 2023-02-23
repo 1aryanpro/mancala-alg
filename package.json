@@ -1,0 +1,7 @@
+{
+  "type": "module",
+  "dependencies": {
+    "megahash": "^1.0.5",
+    "mersenne-hash-table": "^0.0.3"
+  }
+}
