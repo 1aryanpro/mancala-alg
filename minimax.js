@@ -12,12 +12,12 @@ let savedEvals = new MegaHash();
 // +++++++++++++++++++++++++++++++++++++++
 function main() {
   // console.log(savedEvals.stats())
-  let board = newBoard();
-  let nextPlayer = makeMoves(board, []);
+  let board = [1, 2, 4, 6, 2, 1, 4, 0, 1, 3, 5, 2, 1, 0];
+  let nextPlayer = makeMoves(board, [6, 10, 4, 13, 12, 13, 11, 13, 12, 5, 6, ]);
 
   // pick even numbers for depth
   let start = Date.now();
-  let evals = bestMove(board, nextPlayer, 8);
+  let evals = bestMove(board, nextPlayer, 10);
   let end = Date.now();
   console.log((end - start) / 1000, 'Seconds Calculating');
   saveEvals();
@@ -25,6 +25,7 @@ function main() {
   drawBoard(board);
   console.log(`${nextPlayer ? 'Your' : 'Opponent\'s'} move`);
   evals.forEach(([m, s]) => {
+    // s = isFinite(s) ? s : (s > 0 ? 'You win' : 'Opp win')
     console.log(`${('   ' + m).slice(-2)}  =>  ${s}`);
   });
 }
@@ -32,27 +33,14 @@ function main() {
 function saveEvals() {
   fs.writeFileSync('savedEvals.txt', '');
   let key = savedEvals.nextKey();
-  let total = savedEvals.stats()['numKeys'];
-  let tsize = total.toString().length;
-  let count = 0;
-  let start = Date.now();
 
   function* generator() {
     while (key) {
       let [depth, ev] = savedEvals.get(key);
 
-      count++;
-      if (count % Math.round(total / 20) == 0) {
-        let prop = Math.round(count / total * 100);
-        process.stdout.write(`${prop}% ${(' '.repeat(tsize) + count).slice(-tsize)}/${total}\r`);
-      }
-
       yield `${key} ${depth} ${ev}\n`;
       key = savedEvals.nextKey(key);
     }
-
-    process.stdout.write(`100% ${total}/${total}\r`);
-    console.log('\n', (Date.now() - start) / 1000, `Saved Data`);
   }
 
   const writeStream = fs.createWriteStream('savedEvals.txt');
@@ -70,12 +58,13 @@ function moveList(board, maxingPlayer) {
 }
 
 function minimax(board, maxingPlayer, depth, alpha = -Infinity, beta = Infinity) {
-  let save = savedEvals.get(boardId(board));
-  if (save && save[0] >= depth) return save[1] == null ? staticEval(board) : save[1];
   if (depth == 0) return staticEval(board);
+  
+  let save = savedEvals.get(boardId(board));
+  if (save != undefined && save[0] >= depth && save[1] != null) save[1];
 
   let moves = moveList(board, maxingPlayer);
-  if (moves == []) return staticEval(board);
+  if (moves.length == 0) return staticEval(board);
 
   let nexts = [];
   moves.forEach(m => {
@@ -113,8 +102,9 @@ function bestMove(board, maxingPlayer, depth) {
   moves = moves.map(m => {
     let next = [...board];
     let p = makeMove(next, m);
-    let ev = minimax(next, maxingPlayer == p, depth);
-    console.log(`Calculated Move ${m} => ${(Date.now() - start) / 1000}s`);
+    let ev = minimax(next, maxingPlayer == p, p ? depth : depth - 1);
+    console.log(`Calculated Move ${( ' ' + m ).slice(-2)} =>`, (Date.now() - start) / 1000);
+    start = Date.now();
     return [m, ev];
   });
   console.log('');

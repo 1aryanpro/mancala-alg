@@ -63,25 +63,33 @@ export function makeMoves(board, moves) {
 export function points(board) {
   let me = board[7];
   let op = board[0];
-  if (me > 24) return Infinity;
-  if (op > 24) return -Infinity;
-  if (me + op == 48) return 0;
-  return me - op;
+  if (me == op) return 0;
+
+  check = true;
+  for (let i = 1; i < 14; i++) {
+    if (i == 7) continue;
+    if (board[i] != 0) {
+      check = false;
+      break;
+    }
+  }
+
+  return check ? (me > op ? Infinity : -Infinity) : me - op;
 }
 
 export function staticEval(board) {
   let me = board[7];
   let op = board[0];
-  if (me > 24) return Infinity;
-  if (op > 24) return -Infinity;
-  if (me + op == 48) return 0;
 
+  let noMoves = true;
   let captures = [0, 0]; // me, opp
   let freeTurn = [0, 0];
   for (let i = 1; i < 14; i++) {
     let id = i < 7 ? 0 : 1;
     let n = board[i];
-    if (i == 7 || n == 0) continue;
+    if (i == 7) continue;
+    if (n != 0) noMoves = false;
+
     freeTurn[id] += (n % 13 == 7 - i % 7) ? 1 : 0;
 
     if (n > 12) continue;
@@ -89,7 +97,11 @@ export function staticEval(board) {
     captures[id] += (board[final] == 0 && board[14 - final] > 0) ? 1 : 0;
   }
 
-  return (me - op) + 2 * (captures[0] - captures[1]) + (freeTurn[0] - freeTurn[1]);
+  return noMoves && me != op
+    ? (me > op ? Infinity : -Infinity) :
+    (me - op)
+    + 2 * (captures[0] - captures[1])
+    + (freeTurn[0] - freeTurn[1]);
 }
 
 export function drawBoard(board) {
